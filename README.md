@@ -15,6 +15,7 @@ Tali cartelle sono da intendersi posizionate in ~/ros2_ws/src
 
 ### Setup dell'ambiente di esecuzione
 Aggiornamento della lista di ciò che si può eseguire, credo sia necessario effettuarlo solo una volta, alla prima compilazione di cpp_alex_hunter col comando precedente.
+
 ~/ros2_ws$ source ./install/setup.bash
 
 ### Esecuzione dell'applicativo ros2:
