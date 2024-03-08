@@ -3,10 +3,13 @@
 // RX socket and address (from Mosaic app)
 int inSocket;
 struct sockaddr_in inAddr;
+socklen_t inAddrLength;
 
 // TX socket and address (to Mosaic app)
 int outSocket;
 struct sockaddr_in outAddr;
+
+mosaic2ros m2r;
 
 // counter of received messages
 int txCount = 0;
@@ -22,7 +25,7 @@ public:
     // nav_msgs::msg::Odometry is a ROS type containing many infos
     // among which, postion and speed on all 3 axis (x, y, z)
     subscriptionHunter_ = this->create_subscription<nav_msgs::msg::Odometry>("odom", 10, std::bind(&MinimalSubscriber::topic_callbackHunter, this,std::placeholders::_1));
-    publisherHunter_ = this->create_publisher<control_msgs::msg::LeaderData>("leader_data", 10);
+    publisherHunter_ = this->create_publisher<my_control_msgs::msg::LeaderData>("leader_data", 10);
     timer_ = this->create_wall_timer(10ms, std::bind(&MinimalSubscriber::timer_callback, this));
   }
 
@@ -52,9 +55,15 @@ private:
 
   void timer_callback()
     {
-      auto leadermsg = control_msgs::msg::LeaderData();
-      leadermsg.leader_distance = 100.0;
-      leadermsg.leader_velocity = 500.0;
+      auto leadermsg = my_control_msgs::msg::LeaderData();
+
+      char buffer[1000];
+      memset(buffer, 0, sizeof(buffer));
+      int recBytes = recvfrom(inSocket, buffer, sizeof(buffer), 0, (struct sockaddr*)&inAddr, &inAddrLength);
+      memcpy(&m2r, buffer, recBytes);
+      leadermsg.leader_distance = m2r.leader_distance / SCALE_FACTOR;
+      //leadermsg.leader_distance = 2.0;
+      leadermsg.leader_velocity = m2r.leader_velocity / SCALE_FACTOR;
       RCLCPP_INFO(this->get_logger(), "Publishing: distance='%f'", leadermsg.leader_distance);
       RCLCPP_INFO(this->get_logger(), "Publishing: speed='%f'", leadermsg.leader_velocity);
       publisherHunter_->publish(leadermsg);
@@ -62,7 +71,7 @@ private:
 
     rclcpp::Subscription<nav_msgs::msg::Odometry>::SharedPtr subscriptionHunter_;
     rclcpp::TimerBase::SharedPtr timer_;
-    rclcpp::Publisher<control_msgs::msg::LeaderData>::SharedPtr publisherHunter_;
+    rclcpp::Publisher<my_control_msgs::msg::LeaderData>::SharedPtr publisherHunter_;
     size_t count_;
 };
 
@@ -107,6 +116,8 @@ void initSockets() {
     } else {
         std::cout << "[INIT] Binded inSocket" << std::endl;
     }
+
+    inAddrLength = sizeof(inAddr);
 
     std::cout << "[INIT] Creating outSocket" << std::endl;
     outSocket = socket(PF_INET, SOCK_DGRAM, IPPROTO_UDP);
@@ -176,7 +187,11 @@ void simulateSpeed() {
 void sendData(int number, double speed) {
     ros2mosaic s;
     s.number = number;
-    s.speed = abs(speed);
+    if (speed < 0) {
+      s.speed = 0;
+    } else {
+      s.speed = speed;
+    }
     sendto(outSocket, &s, sizeof(s), 0, (struct sockaddr*)&outAddr, sizeof(outAddr));
     std::cout << "[HIL][" << txCount << "] SPEED sent (number=" << number << ", speed=" << speed << ") to " << OUT_ADDRESS << ":" << OUT_PORT << std::endl;
     std::cout << "------------------------------------------------------------------" << std::endl;

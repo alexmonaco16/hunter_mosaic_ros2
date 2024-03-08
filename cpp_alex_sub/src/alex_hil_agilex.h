@@ -16,12 +16,13 @@
 #include "geometry_msgs/msg/twist.hpp"
 #include "nav_msgs/msg/odometry.hpp"
 #include "hunter_msgs/msg/hunter_status.hpp"
-#include "control_msgs/msg/pid_data.hpp"
-#include "control_msgs/msg/leader_data.hpp"
+#include "my_control_msgs/msg/pid_data.hpp"
+#include "my_control_msgs/msg/leader_data.hpp"
 
 // Sending rate in milliseconds (SIMULATION mode)
 #define SIM_RATE 20
-#define SCALE_FACTOR 10
+// simulation_speed = SCALE_FACTOR * real_speed
+#define SCALE_FACTOR 20
 
 // UDP ports and address
 #define IN_PORT 1234
@@ -49,8 +50,8 @@ typedef struct {
 
 // AgilexNodeApp (Mosaic) --> alex_hil_agilex (this applicative) message
 typedef struct {
-    double nextVehicleDistance;
-    double nextVehicleSpeed;
+    double leader_distance;
+    double leader_velocity;
 } mosaic2ros;
 
 void initSockets();

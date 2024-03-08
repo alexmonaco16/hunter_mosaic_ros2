@@ -15,10 +15,10 @@ find_package(std_msgs REQUIRED)
 find_package(geometry_msgs REQUIRED)
 find_package(nav_msgs REQUIRED)
 find_package(hunter_msgs REQUIRED)
-find_package(control_msgs REQUIRED)
+find_package(my_control_msgs REQUIRED)
 
 add_executable(listener src/alex_hil_agilex.cpp)
-ament_target_dependencies(listener rclcpp std_msgs geometry_msgs nav_msgs hunter_msgs control_msgs)
+ament_target_dependencies(listener rclcpp std_msgs geometry_msgs nav_msgs hunter_msgs my_control_msgs)
 
 install(TARGETS
   listener
